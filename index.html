@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+    <title>Document</title>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+
+    <script>
+      let w, h, loopId, id, canvas, ctx, particles;
+      let option = {
+        particleColor: "rgba(255,255,255)",
+        lineColor: "rgba(0,181,255)",
+        particleAmount: 30,
+        defaultRadius: 2,
+        variantRadius: 2,
+        defaultSpeed: 1,
+        variantSpeed: 1,
+        linkRadius: 400,
+      };
+
+      let rgb = option.lineColor.match(/\d+/g);
+
+      document.addEventListener("DOMContentLoaded", init);
+
+      function init() {
+        canvas = document.getElementById("canvas");
+        ctx = canvas.getContext("2d");
+        resizeReset();
+        initialiseElements();
+        startAnimation();
+      }
+
+      function resizeReset() {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
+      }
+
+      function initialiseElements() {
+        particles = [];
+        for (let i = 0; i < option.particleAmount; i++) {
+          particles.push(new Particle());
+        }
+      }
+
+      function startAnimation() {
+        loopId = requestAnimationFrame(animationLoop);
+      }
+
+      function animationLoop() {
+        ctx.clearRect(0, 0, w, h);
+        drawScene();
+
+        id = requestAnimationFrame(animationLoop);
+      }
+
+      function drawScene() {
+        drawLine();
+        drawParticle();
+      }
+
+      function drawParticle() {
+        for (let i = 0; i < particles.length; i++) {
+          particles[i].update();
+          particles[i].draw();
+        }
+      }
+
+      function drawLine() {
+        for (let i = 0; i < particles.length; i++) {
+          linkPoints(particles[i], particles);
+        }
+      }
+
+      function linkPoints(point, hubs) {
+        for (let i = 0; i < hubs.length; i++) {
+          let distance = checkDistanse(point.x, point.y, hubs[i].x, hubs[i].y);
+          let opacity = 1 - distance / option.linkRadius;
+          if (opacity > 0) {
+            ctx.lineWidth = 0.5;
+            ctx.strokeStyle =
+              "rgba(" +
+              rgb[0] +
+              "," +
+              rgb[1] +
+              "," +
+              rgb[2] +
+              "," +
+              opacity +
+              ")";
+            ctx.beginPath();
+            ctx.moveTo(point.x, point.y);
+            ctx.lineTo(hubs[i].x, hubs[i].y);
+            ctx.closePath();
+            ctx.stroke();
+          }
+        }
+      }
+
+      function checkDistanse(x1, y1, x2, y2) {
+        return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+      }
+
+      Particle = function () {
+        let _this = this;
+
+        _this.x = Math.random() * w;
+        _this.y = Math.random() * h;
+        _this.color = option.particleColor;
+        _this.radius =
+          option.defaultRadius + Math.random() * option.variantRadius;
+        _this.speed = option.defaultSpeed + Math.random() * option.variantSpeed;
+        _this.derectionAngle = Math.floor(Math.random() * 360);
+        _this.vector = {
+          x: Math.cos(_this.derectionAngle) * _this.speed,
+          y: Math.sin(_this.derectionAngle) * _this.speed,
+        };
+
+        _this.update = function () {
+          _this.border();
+          _this.x += _this.vector.x;
+          _this.y += _this.vector.y;
+        };
+
+        _this.border = function () {
+          if (_this.x >= w || _this.x <= 0) _this.vector.x *= -1;
+          if (_this.y >= h || _this.y <= 0) _this.vector.y *= -1;
+          if (_this.x > w) _this.x = w;
+          if (_this.y > h) _this.y = h;
+          if (_this.x < 0) _this.x = 0;
+          if (_this.y < 0) _this.y = 0;
+        };
+
+        _this.draw = function () {
+          ctx.beginPath();
+          ctx.arc(_this.x, _this.y, _this.radius, 0, Math.PI * 2);
+          ctx.closePath();
+          ctx.fillStyle = _this.color;
+          ctx.fill();
+        };
+      };
+    </script>
+  </body>
+</html>
